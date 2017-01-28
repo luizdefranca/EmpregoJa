@@ -30,4 +30,5 @@ dependencies {
     compile 'com.google.android.gms:play-services:10.0.1'
     compile 'com.android.volley:volley:1.0.0'
     compile 'com.google.code.gson:gson:+'
+    compile 'com.android.support:recyclerview-v7:25.1.0'
 }

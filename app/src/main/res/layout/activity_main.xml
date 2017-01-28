@@ -8,12 +8,65 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context="com.mafiagames.empregoja.MainActivity">
+    tools:context="com.mafiagames.empregoja.MainActivity"
+    android:orientation="vertical">
 
-    <ListView
+    <LinearLayout
+        android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:id="@+id/jobsList" />
+        android:layout_height="wrap_content"
+        android:layout_weight="0.07">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/labelCidade"
+            android:textAlignment="center"
+            android:textSize="24sp"
+            android:text="@string/label_cidade" />
+
+        <TextView
+            android:text="..."
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/cidade"
+            android:textAlignment="center"
+            android:textSize="24sp"
+            android:textStyle="normal|bold" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="0.07">
+
+        <TextView
+            android:text="@string/label_tipo_vaga"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/labelTipoVaga"
+            android:layout_weight="0.07"
+            android:textAlignment="center"
+            android:textSize="24sp" />
+
+        <EditText
+            android:id="@+id/tipoVaga"
+            android:layout_weight="0.07"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/hintTipoVaga" />
+    </LinearLayout>
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/button_list"
+        android:onClick="listJobs"
+        android:layout_weight="0.03"
+        style="@style/Widget.AppCompat.Button.Colored"
+        android:clickable="false"
+        android:id="@+id/btnListarVagas" />
 
 
 </LinearLayout>

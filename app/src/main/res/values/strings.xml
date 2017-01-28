@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Emprego Já</string>
+    <string name="button_list">Listar Vagas!</string>
+    <string name="label_cidade">Procurando vagas em:</string>
+    <string name="label_tipo_vaga">Digite abaixo a vaga que você busca:</string>
+    <string name="hintTipoVaga">Ex.: Recepcionsta, Programador...</string>
 </resources>

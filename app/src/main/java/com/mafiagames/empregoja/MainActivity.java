@@ -1,59 +1,68 @@
 package com.mafiagames.empregoja;
 
-import android.app.ProgressDialog;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
-import android.net.Network;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.StringRequest;
-import com.android.volley.toolbox.Volley;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
-import com.google.gson.Gson;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
     private GoogleApiClient googleApiClient;
+    private Location mLastLocation;
     private String cidade;
-    private Gson gson;
-    private ProgressDialog progressDialog;
-    private ListView jobsList;
-    private String jobsTitle[];
+
+    private static final int MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
+    public static final String INTENT_CIDADE = "CIDADE";
+    public static final String INTENT_TIPO_VAGA = "TIPO_VAGA";
+
+    private boolean hasPermissaoLocalizacaoExata() {
+        return (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED);
+    }
+
+    private boolean hasPermissaoLocalizacaoAproximada() {
+        return (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED);
+    }
+
+    private void setCidade() {
+        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+        List<Address> addresses = null;
+
+        try {
+            addresses = geocoder.getFromLocation(mLastLocation.getLatitude(), mLastLocation.getLongitude(), 1);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        cidade = addresses.get(0).getAddressLine(1);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        progressDialog = new ProgressDialog(MainActivity.this);
-        progressDialog.setMessage("Carregando...");
-        progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-        progressDialog.show();
 
         // Create an instance of GoogleAPIClient.
         if (googleApiClient == null) {
@@ -67,9 +76,20 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     @Override
     protected void onStart() {
-        Log.d("LOCATION MANAGER", String.valueOf(LocationServices.API));
-        googleApiClient.connect();
         super.onStart();
+
+        // Verificamos se temos permissão para acessar localização exata ou aproximada
+        if (!hasPermissaoLocalizacaoExata() || !hasPermissaoLocalizacaoAproximada()) {
+
+            // Se não temos nenhuma permissão, pedimos permissão para localização exata
+            ActivityCompat.requestPermissions(this,
+                    new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
+                    MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
+
+        } else {
+            googleApiClient.connect();
+        }
+
     }
 
     @Override
@@ -79,72 +99,54 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     }
 
     @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    googleApiClient.connect();
+
+                } else {
+
+                    // A permissão não foi dada. O app ficará em loop até a permissão ser obtida
+                    ActivityCompat.requestPermissions(this,
+                            new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
+                            MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
+                }
+            }
+        }
+    }
+
+    @Override
     public void onConnected(@Nullable Bundle bundle) {
-        Location mLastLocation = null;
 
         try {
             mLastLocation = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
         } catch (SecurityException ex) {
             Log.d("LOCATION MANAGER", ex.getMessage());
-            Toast.makeText(this, "Um erro ocorreu ao capturar a localização.", Toast.LENGTH_LONG);
         }
 
+        // Conseguimos pegar a localização
         if (mLastLocation != null) {
 
-            Geocoder geocoder = new Geocoder(this, Locale.getDefault());
-            List<Address> addresses = null;
+            // Vamos pegar a cidade
+            setCidade();
 
-            try {
-                addresses = geocoder.getFromLocation(mLastLocation.getLatitude(), mLastLocation.getLongitude(), 1);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            TextView viewCidade = (TextView) findViewById(R.id.cidade);
+            viewCidade.setText(cidade);
 
-            cidade = addresses.get(0).getAddressLine(1).replace(" ", "").replace("-", "%2C+");
+            EditText tipoVaga = (EditText) findViewById(R.id.tipoVaga);
+            tipoVaga.requestFocus();
 
-            getJobs();
+            Button btnListarVagas = (Button) findViewById(R.id.btnListarVagas);
+            btnListarVagas.setClickable(true);
+
+        } else {
+            Toast.makeText(this, "Um erro ocorreu ao capturar a localização.", Toast.LENGTH_LONG).show();
         }
-    }
-
-    private void getJobs() {
-
-        RequestQueue queue = Volley.newRequestQueue(this);
-        String url ="http://api.indeed.com/ads/apisearch?publisher=7462486830937105&v=2&format=json&co=br&q=java&l=" + cidade;
-
-        jobsList = (ListView)findViewById(R.id.jobsList);
-
-        // Request a string response from the provided URL.
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-
-                        gson = new Gson();
-                        JsonWrapper jw = gson.fromJson(response, JsonWrapper.class);
-
-                        jobsTitle = new String[jw.results.size()];
-
-                        Log.d("EMPREGOS", String.valueOf(jw.results.size()));
-
-                        for(int i=0; i < jw.results.size(); ++i){
-                            Emprego e = jw.results.get(i);
-                            jobsTitle[i] = e.jobtitle;
-                        }
-
-                        jobsList.setAdapter(new ArrayAdapter(MainActivity.this, android.R.layout.simple_list_item_1, jobsTitle));
-                        progressDialog.dismiss();
-                    }
-
-                }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.d("REQUEST", "That didn't work!");
-                Toast.makeText(MainActivity.this, "Um erro ocorreu ao carregar as vagas de emprego.", Toast.LENGTH_LONG);
-                progressDialog.dismiss();
-            }
-        });
-        // Add the request to the RequestQueue.
-        queue.add(stringRequest);
     }
 
     @Override
@@ -160,5 +162,17 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         if (googleApiClient.isConnected()) {
             googleApiClient.disconnect();
         }
+    }
+
+    public void listJobs(View view) {
+        Intent intent = new Intent(this, ListaEmpregosActivity.class);
+
+        EditText tipoVaga = (EditText) findViewById(R.id.tipoVaga);
+        String message = tipoVaga.getText().toString();
+
+        intent.putExtra(INTENT_TIPO_VAGA, message);
+        intent.putExtra(INTENT_CIDADE, cidade.replace(" ", "").replace("-", "%2C+"));
+
+        startActivity(intent);
     }
 }
