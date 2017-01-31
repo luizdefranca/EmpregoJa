@@ -17,6 +17,8 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.InterstitialAd;
 import com.google.gson.Gson;
 
 import java.util.ArrayList;
@@ -33,6 +35,7 @@ public class ListaEmpregosActivity extends AppCompatActivity {
     private int start = 1;
     private int totalVagas = 1;
     private EmpregoAdapter adapter;
+    InterstitialAd mInterstitialAd;
 
 
     private void showJobs() {
@@ -76,9 +79,44 @@ public class ListaEmpregosActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+
+        Log.d("LISTAEMPREGOSACTIVITY", "onStart");
+
+        mInterstitialAd = new InterstitialAd(ListaEmpregosActivity.this);
+        mInterstitialAd.setAdUnitId("ca-app-pub-8971294493511091/5369013161");
+
+
+
+
+
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.d("LISTAEMPREGOSACTIVITY", "onResume");
+        Log.d("LISTAEMPREGOSACTIVITY", mInterstitialAd.toString());
+
+        //AdView mAdView = (AdView) findViewById(R.id.adView);
+        AdRequest adRequest = new AdRequest.Builder().build();
+        //mAdView.loadAd(adRequest);
+        mInterstitialAd.loadAd(adRequest);
+        mInterstitialAd.show();
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        Log.d("LISTAEMPREGOSACTIVITY", "onRestart");
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_lista_empregos);
+        Log.d("LISTAEMPREGOSACTIVITY", "onCreate");
 
         Intent intent = getIntent();
         cidade = intent.getStringExtra(MainActivity.INTENT_CIDADE);
@@ -90,6 +128,8 @@ public class ListaEmpregosActivity extends AppCompatActivity {
         progressDialog.show();
 
         mListView = (ListView) findViewById(R.id.jobsList);
+
+
 
         mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 

@@ -64,7 +64,7 @@
         android:text="@string/button_list"
         android:onClick="listJobs"
         android:layout_weight="0.03"
-        style="@style/Widget.AppCompat.Button.Colored"
+        android:background="@color/colorPrimary"
         android:clickable="false"
         android:id="@+id/btnListarVagas" />
 
