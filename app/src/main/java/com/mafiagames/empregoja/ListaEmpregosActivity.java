@@ -30,6 +30,9 @@ public class ListaEmpregosActivity extends AppCompatActivity {
     private ListView mListView;
     private TextView mTotalVagas;
     private ArrayList<Emprego> jobs;
+    private int start = 1;
+    private int totalVagas = 1;
+    private EmpregoAdapter adapter;
 
 
     private void showJobs() {
@@ -45,30 +48,12 @@ public class ListaEmpregosActivity extends AppCompatActivity {
                         gson = new Gson();
                         JsonWrapper jw = gson.fromJson(response, JsonWrapper.class);
                         jobs = jw.results;
+                        totalVagas = jw.totalResults;
 
                         mTotalVagas = (TextView) findViewById(R.id.totalVagas);
-                        mTotalVagas.setText("Mostrando de " + jw.start + " a " + jw.end + " de " + jw.totalResults + " vagas encontradas");
+                        mTotalVagas.setText(jw.totalResults + " vagas encontradas");
 
-                        mListView = (ListView) findViewById(R.id.jobsList);
-
-                        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-
-                            @Override
-                            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-
-                                Emprego emprego = jobs.get(position);
-
-                                Intent detailIntent = new Intent(ListaEmpregosActivity.this, EmpregoDetalheActivity.class);
-
-                                detailIntent.putExtra("title", emprego.jobtitle);
-                                detailIntent.putExtra("url", emprego.url);
-
-                                startActivity(detailIntent);
-                            }
-
-                        });
-
-                        EmpregoAdapter adapter = new EmpregoAdapter(ListaEmpregosActivity.this, jobs);
+                        adapter = new EmpregoAdapter(ListaEmpregosActivity.this, jobs);
                         mListView.setAdapter(adapter);
 
                         progressDialog.dismiss();
@@ -104,6 +89,80 @@ public class ListaEmpregosActivity extends AppCompatActivity {
         progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
         progressDialog.show();
 
+        mListView = (ListView) findViewById(R.id.jobsList);
+
+        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+                Emprego emprego = jobs.get(position);
+
+                Intent detailIntent = new Intent(ListaEmpregosActivity.this, EmpregoDetalheActivity.class);
+
+                detailIntent.putExtra("title", emprego.jobtitle);
+                detailIntent.putExtra("url", emprego.url);
+
+                startActivity(detailIntent);
+            }
+
+        });
+
+        // Attach the listener to the AdapterView onCreate
+        mListView.setOnScrollListener(new EndlessScrollListener() {
+            @Override
+            public boolean onLoadMore(int page, int totalItemsCount) {
+                if (totalItemsCount < totalVagas) {
+                    loadNextDataFromApi();
+                    return true;
+                }
+
+                return false;
+            }
+        });
+
         showJobs();
+    }
+
+    public void loadNextDataFromApi() {
+        start += 10;
+
+        progressDialog = new ProgressDialog(ListaEmpregosActivity.this);
+        progressDialog.setMessage("Carregando...");
+        progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        progressDialog.show();
+
+        RequestQueue queue = Volley.newRequestQueue(this);
+        String url = "http://api.indeed.com/ads/apisearch?publisher=7462486830937105&v=2&format=json&co=br&q=" + tipoVaga + "&l=" + cidade + "&start=" + start;
+
+        // Request a string response from the provided URL.
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+
+                        gson = new Gson();
+                        JsonWrapper jw = gson.fromJson(response, JsonWrapper.class);
+                        jobs.addAll(jw.results);
+
+                        adapter.notifyDataSetChanged();
+
+                        progressDialog.dismiss();
+                    }
+
+                },
+
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.d("REQUEST", "That didn't work!");
+                        Toast.makeText(ListaEmpregosActivity.this, "Um erro ocorreu ao carregar mais vagas de emprego.", Toast.LENGTH_LONG).show();
+                        progressDialog.dismiss();
+                    }
+                }
+        );
+
+        // Add the request to the RequestQueue.
+        queue.add(stringRequest);
     }
 }
