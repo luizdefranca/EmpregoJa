@@ -1,7 +1,6 @@
 package com.mafiagames.empregoja;
 
 import android.content.Context;
-import android.graphics.Typeface;
 import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -75,8 +74,8 @@ public class EmpregoAdapter extends BaseAdapter {
         subtitleTextView.setText(Html.fromHtml(emprego.snippet));
         detailTextView.setText(emprego.city);
 
-        Typeface detailTypeFace = Typeface.createFromAsset(mContext.getAssets(), "fonts/FiraSansCondensed-Bold.ttf");
-        detailTextView.setTypeface(detailTypeFace);
+/*        Typeface detailTypeFace = Typeface.createFromAsset(mContext.getAssets(), "fonts/FiraSansCondensed-Bold.ttf");
+        detailTextView.setTypeface(detailTypeFace);*/
 
         return convertView;
     }

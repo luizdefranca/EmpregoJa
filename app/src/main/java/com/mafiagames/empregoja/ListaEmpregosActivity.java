@@ -18,6 +18,7 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.InterstitialAd;
 import com.google.gson.Gson;
 
@@ -38,9 +39,16 @@ public class ListaEmpregosActivity extends AppCompatActivity {
     InterstitialAd mInterstitialAd;
 
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+    }
+
+
     private void showJobs() {
         RequestQueue queue = Volley.newRequestQueue(this);
-        String url = "http://api.indeed.com/ads/apisearch?publisher=7462486830937105&v=2&format=json&co=br&q=" + tipoVaga + "&l=" + cidade;
+        String url = "http://api.indeed.com/ads/apisearch?publisher=5403611395821460&v=2&format=json&co=br&q=" + tipoVaga + "&l=" + cidade;
 
         // Request a string response from the provided URL.
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
@@ -78,39 +86,9 @@ public class ListaEmpregosActivity extends AppCompatActivity {
         queue.add(stringRequest);
     }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-
-        Log.d("LISTAEMPREGOSACTIVITY", "onStart");
-
-        mInterstitialAd = new InterstitialAd(ListaEmpregosActivity.this);
-        mInterstitialAd.setAdUnitId("ca-app-pub-8971294493511091/5369013161");
 
 
 
-
-
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        Log.d("LISTAEMPREGOSACTIVITY", "onResume");
-        Log.d("LISTAEMPREGOSACTIVITY", mInterstitialAd.toString());
-
-        //AdView mAdView = (AdView) findViewById(R.id.adView);
-        AdRequest adRequest = new AdRequest.Builder().build();
-        //mAdView.loadAd(adRequest);
-        mInterstitialAd.loadAd(adRequest);
-        mInterstitialAd.show();
-    }
-
-    @Override
-    protected void onRestart() {
-        super.onRestart();
-        Log.d("LISTAEMPREGOSACTIVITY", "onRestart");
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -127,11 +105,17 @@ public class ListaEmpregosActivity extends AppCompatActivity {
         progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
         progressDialog.show();
 
+        mInterstitialAd = new InterstitialAd(this);
+        mInterstitialAd.setAdUnitId("ca-app-pub-8971294493511091/2109005569");
+
+
+
         mListView = (ListView) findViewById(R.id.jobsList);
 
 
 
         mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
 
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -144,6 +128,12 @@ public class ListaEmpregosActivity extends AppCompatActivity {
                 detailIntent.putExtra("url", emprego.url);
 
                 startActivity(detailIntent);
+                AdView mAdView = (AdView) findViewById(R.id.adView);
+                AdRequest adRequest = new AdRequest.Builder().build();
+                mAdView.loadAd(adRequest);
+                mInterstitialAd.loadAd(adRequest);
+                mInterstitialAd.show();
+
             }
 
         });
@@ -173,7 +163,7 @@ public class ListaEmpregosActivity extends AppCompatActivity {
         progressDialog.show();
 
         RequestQueue queue = Volley.newRequestQueue(this);
-        String url = "http://api.indeed.com/ads/apisearch?publisher=7462486830937105&v=2&format=json&co=br&q=" + tipoVaga + "&l=" + cidade + "&start=" + start;
+        String url = "http://api.indeed.com/ads/apisearch?publisher=5403611395821460&v=2&format=json&co=br&q=" + tipoVaga + "&l=" + cidade + "&start=" + start;
 
         // Request a string response from the provided URL.
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,

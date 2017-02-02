@@ -1,5 +1,6 @@
 package com.mafiagames.empregoja;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Address;
@@ -10,13 +11,13 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -130,23 +131,53 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         }
 
         // Conseguimos pegar a localização
-        if (mLastLocation != null) {
+        //if (mLastLocation != null) {
 
-            // Vamos pegar a cidade
-            setCidade();
 
-            TextView viewCidade = (TextView) findViewById(R.id.cidade);
-            viewCidade.setText(cidade);
-
-            EditText tipoVaga = (EditText) findViewById(R.id.tipoVaga);
-            tipoVaga.requestFocus();
 
             Button btnListarVagas = (Button) findViewById(R.id.btnListarVagas);
-            btnListarVagas.setClickable(true);
+            btnListarVagas.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
 
-        } else {
-            Toast.makeText(this, "Um erro ocorreu ao capturar a localização.", Toast.LENGTH_LONG).show();
-        }
+                    if (mLastLocation != null) {
+                        // Vamos pegar a cidade
+                        setCidade();
+
+                        TextView viewCidade = (TextView) findViewById(R.id.cidade);
+                        viewCidade.setText(cidade);
+
+                        EditText tipoVaga = (EditText) findViewById(R.id.tipoVaga);
+                        tipoVaga.requestFocus();
+
+                        listJobs(view);
+                    } else {
+                        DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                switch (which) {
+                                    case DialogInterface.BUTTON_POSITIVE:
+                                        Intent callGPSSettingIntent = new Intent(
+                                                android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                                        startActivity(callGPSSettingIntent);
+                                        break;
+                                }
+                            }
+                        };
+
+                        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                        AlertDialog mNoGpsDialog = builder.setMessage("Por favor ative sua localização para usar esse aplicativo.")
+                                .setPositiveButton("Ativar", dialogClickListener)
+                                .create();
+                        mNoGpsDialog.show();
+                    }
+                }
+            });
+
+        //} else {
+
+            //Toast.makeText(this, "Um erro ocorreu ao capturar a localização.", Toast.LENGTH_LONG).show();
+        //}
     }
 
     @Override
