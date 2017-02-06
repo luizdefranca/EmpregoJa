@@ -11,29 +11,45 @@
     tools:context="com.mafiagames.empregoja.MainActivity"
     android:orientation="vertical">
 
-    <LinearLayout
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/labelCidade"
+        android:textAlignment="center"
+        android:textSize="24sp"
+        android:text="@string/label_cidade" />
+
+    <RelativeLayout
         android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="0.07">
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/labelCidade"
-            android:textAlignment="center"
-            android:textSize="24sp"
-            android:text="@string/label_cidade" />
-
-        <TextView
-            android:text="..."
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+        <EditText
+            android:hint="@string/cidadeHint"
             android:id="@+id/cidade"
             android:textAlignment="center"
             android:textSize="24sp"
-            android:textStyle="normal|bold" />
-    </LinearLayout>
+            android:textStyle="normal|bold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentTop="true"/>
+
+        <ImageButton
+            android:layout_width="60dp"
+            android:layout_height="wrap_content"
+            android:layout_alignBottom="@+id/cidade"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentTop="true"
+            android:scaleType="fitCenter"
+            android:adjustViewBounds="true"
+            android:padding="5dp"
+            android:src="@drawable/btn_emprego_ja"
+            android:id="@+id/btnLocalizarCidade"
+            android:background="@null"/>
+    </RelativeLayout>
 
     <LinearLayout
         android:orientation="vertical"
@@ -61,8 +77,9 @@
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/button_list"
         android:layout_weight="0.03"
+        android:text="@string/button_list"
+        android:textColor="@color/colorText"
         android:background="@color/colorPrimary"
         android:clickable="false"
         android:id="@+id/btnListarVagas" />
