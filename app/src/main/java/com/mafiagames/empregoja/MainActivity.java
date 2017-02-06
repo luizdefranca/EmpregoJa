@@ -79,13 +79,13 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 .create();
         alert.show();
 
-        alert.setOnDismissListener(new AlertDialog.OnDismissListener() {
+        /*alert.setOnDismissListener(new AlertDialog.OnDismissListener() {
 
             @Override
             public void onDismiss(DialogInterface dialogInterface) {
                 progressDialog.dismiss();
             }
-        });
+        });*/
     }
 
     private void localizarCidade() {
@@ -132,18 +132,25 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     }
 
     private void initLocalizarCidade() {
-        progressDialog = new ProgressDialog(MainActivity.this);
-        progressDialog.setMessage("Carregando...");
-        progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-        progressDialog.show();
+        LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+        boolean isProviderEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
 
-        // Se a Google API Client nao estiver conectada, conectamos
-        if (!googleApiClient.isConnected()) {
-            googleApiClient.connect();
+        if(!isProviderEnabled) {
+            alertAtivarLocalizacao();
         } else {
+            progressDialog = new ProgressDialog(MainActivity.this);
+            progressDialog.setMessage("Carregando...");
+            progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+            progressDialog.show();
 
-            // Se estiver, vamos apenas localizar a cidade
-            localizarCidade();
+            // Se a Google API Client nao estiver conectada, conectamos
+            if (!googleApiClient.isConnected()) {
+                googleApiClient.connect();
+            } else {
+
+                // Se estiver, vamos apenas localizar a cidade
+                localizarCidade();
+            }
         }
     }
 
@@ -203,13 +210,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
         if (requestCode == ACTIVATE_LOCATION_ACTIVITY_RESULT) {
-
-            LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
-            boolean isProviderEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
-
-            if(isProviderEnabled) {
-                initLocalizarCidade();
-            }
+            initLocalizarCidade();
         }
 
     }
@@ -240,30 +241,13 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     @Override
     public void onConnected(@Nullable Bundle bundle) {
 
-        LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
-        boolean isProviderEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
-
-        if(!isProviderEnabled) {
-            alertAtivarLocalizacao();
-        } else {
-
-            try {
-                mLastLocation = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
-            } catch (SecurityException ex) {
-                Log.d(LOG_LOCATION_MANAGER, ex.getMessage());
-            }
-
-            localizarCidade();
+        try {
+            mLastLocation = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
+        } catch (SecurityException ex) {
+            Log.d(LOG_LOCATION_MANAGER, ex.getMessage());
         }
 
-
-        // Se estiver nula, exibiremos diálogo solicitando que a localização seja habilitada.
-        if (mLastLocation == null) {
-
-
-            // Localização ativada?
-            //googleApiClient.connect();
-        }
+        localizarCidade();
     }
 
     @Override
