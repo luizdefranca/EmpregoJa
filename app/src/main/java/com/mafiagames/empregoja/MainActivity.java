@@ -1,12 +1,14 @@
 package com.mafiagames.empregoja;
 
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -19,14 +21,12 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
@@ -43,6 +43,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private ProgressDialog progressDialog;
 
     private static final int MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
+    private static final int ACTIVATE_LOCATION_ACTIVITY_RESULT = 2;
     private static final String LOG_LOCATION_MANAGER = "LOCATION_MANAGER";
     private static final String LOG_APP = "MAIN_ACTIVITY";
     public static final String INTENT_CIDADE = "CIDADE";
@@ -57,26 +58,34 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         return (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED);
     }
-    
-    private void ativarLocalizacao() {
+
+    private void alertAtivarLocalizacao() {
         DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 switch (which) {
                     case DialogInterface.BUTTON_POSITIVE:
-                        Intent callGPSSettingIntent = new Intent(
+                        Intent locationIntent = new Intent(
                                 android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                        startActivity(callGPSSettingIntent);
+                        startActivityForResult(locationIntent, ACTIVATE_LOCATION_ACTIVITY_RESULT);
                         break;
                 }
             }
         };
 
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-        AlertDialog mNoGpsDialog = builder.setMessage("Por favor, ative sua localização para usar esse aplicativo.")
+        AlertDialog alert = builder.setMessage("Por favor, ative sua localização para usar esse aplicativo.")
                 .setPositiveButton("Ativar", dialogClickListener)
                 .create();
-        mNoGpsDialog.show();
+        alert.show();
+
+        alert.setOnDismissListener(new AlertDialog.OnDismissListener() {
+
+            @Override
+            public void onDismiss(DialogInterface dialogInterface) {
+                progressDialog.dismiss();
+            }
+        });
     }
 
     private void localizarCidade() {
@@ -86,8 +95,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
         try {
             addresses = geocoder.getFromLocation(mLastLocation.getLatitude(), mLastLocation.getLongitude(), 1);
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            Log.d(LOG_LOCATION_MANAGER, e.getMessage());
         }
 
         if (addresses == null || addresses.isEmpty()) {
@@ -122,6 +131,22 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     }
 
+    private void initLocalizarCidade() {
+        progressDialog = new ProgressDialog(MainActivity.this);
+        progressDialog.setMessage("Carregando...");
+        progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        progressDialog.show();
+
+        // Se a Google API Client nao estiver conectada, conectamos
+        if (!googleApiClient.isConnected()) {
+            googleApiClient.connect();
+        } else {
+
+            // Se estiver, vamos apenas localizar a cidade
+            localizarCidade();
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -143,16 +168,10 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                             new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
                             MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
 
+                } else {
+
+                    initLocalizarCidade();
                 }
-
-                progressDialog = new ProgressDialog(MainActivity.this);
-                progressDialog.setMessage("Carregando...");
-                progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-                progressDialog.show();
-
-                // Vamos conectar a Google API Client
-                /// A função onConnected fará a localização da cidade
-                googleApiClient.connect();
             }
         });
 
@@ -181,8 +200,18 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     }
 
     @Override
-    protected void onStart() {
-        super.onStart();
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        if (requestCode == ACTIVATE_LOCATION_ACTIVITY_RESULT) {
+
+            LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+            boolean isProviderEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+
+            if(isProviderEnabled) {
+                initLocalizarCidade();
+            }
+        }
+
     }
 
     @Override
@@ -197,13 +226,12 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         switch (requestCode) {
             case MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION: {
                 // If request is cancelled, the result arrays are empty.
-                if (grantResults.length <= 0
-                        || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
-                    // A permissão não foi dada. O app ficará em loop até a permissão ser obtida
-                    ActivityCompat.requestPermissions(this,
-                            new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
-                            MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
+                    initLocalizarCidade();
+                } else {
+                    Toast.makeText(MainActivity.this, "Esse aplicativo precisa de permissão para localizar sua cidade.", Toast.LENGTH_SHORT).show();
                 }
             }
         }
@@ -212,21 +240,30 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     @Override
     public void onConnected(@Nullable Bundle bundle) {
 
-        try {
-            mLastLocation = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
-        } catch (SecurityException ex) {
-            Log.d(LOG_LOCATION_MANAGER, ex.getMessage());
+        LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+        boolean isProviderEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+
+        if(!isProviderEnabled) {
+            alertAtivarLocalizacao();
+        } else {
+
+            try {
+                mLastLocation = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
+            } catch (SecurityException ex) {
+                Log.d(LOG_LOCATION_MANAGER, ex.getMessage());
+            }
+
+            localizarCidade();
         }
+
 
         // Se estiver nula, exibiremos diálogo solicitando que a localização seja habilitada.
         if (mLastLocation == null) {
-            ativarLocalizacao();
+
 
             // Localização ativada?
-            googleApiClient.connect();
+            //googleApiClient.connect();
         }
-
-        localizarCidade();
     }
 
     @Override
